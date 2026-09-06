@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
@@ -17,8 +18,14 @@ logger = logging.getLogger(__name__)
 async def main():
     logger.info("Starting Telegram Bot...")
 
+    session = (
+        AiohttpSession(proxy=settings.PROXY_URL)
+        if settings.PROXY_URL
+        else None
+    )
     bot = Bot(
         token=settings.BOT_TOKEN,
+        session=session,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher()

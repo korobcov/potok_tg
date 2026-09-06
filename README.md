@@ -181,6 +181,22 @@ docker compose exec bot pytest
 
 ## 🛠 Возможные проблемы
 
+- **Бот совсем не отвечает, в логах `aiogram.exceptions.TelegramNetworkError: HTTP Client says - Request timeout error` при старте (`get_me`), повторяется каждый перезапуск** — контейнер не может установить соединение с `api.telegram.org` (не DNS, а сам TCP-коннект зависает). Обычно это блокировка Bot API на уровне провайдера — сам Telegram-клиент при этом продолжает работать через другие протоколы. Проверьте:
+  1. Доступен ли `api.telegram.org` вообще с хост-машины (не из контейнера):
+     ```bash
+     curl -v --max-time 10 https://api.telegram.org
+     ```
+     Если зависает/таймаутит и здесь — проблема на уровне сети/провайдера, а не Docker. Нужен VPN или прокси.
+  2. Проверьте то же самое изнутри контейнера:
+     ```bash
+     docker compose exec bot curl -v --max-time 10 https://api.telegram.org
+     ```
+     Если хост видит Telegram, а контейнер — нет, дело в сетевых настройках Docker (частая история с Docker Desktop + WSL2 при активном VPN/антивирусе, ломающем сеть контейнеров).
+  3. Если доступ заблокирован именно у провайдера, укажите в `.env` HTTP-прокси — бот автоматически подхватит его при старте:
+     ```dotenv
+     PROXY_URL=http://user:pass@host:port
+     ```
+     После этого пересоберите/перезапустите: `docker compose up -d --build`.
 - **`ModuleNotFoundError` при запуске** — не активировано виртуальное окружение: выполните `source .venv/bin/activate`.
 - **Бот не отвечает / `Unauthorized` от Telegram** — проверьте, что `BOT_TOKEN` в `.env` скопирован полностью и без пробелов.
 - **Бот игнорирует сообщения** — убедитесь, что ваш `ADMIN_ID` указан верно (узнать свой ID можно через [@userinfobot](https://t.me/userinfobot)).
