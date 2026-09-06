@@ -1,8 +1,8 @@
-aiogram>=3.0.0,<4.0.0
+pyTelegramBotAPI>=4.14.0
+requests>=2.31.0
 yt-dlp>=2023.11.16
 pydantic-settings>=2.0.0
 pydantic>=2.0.0
 python-dotenv>=1.0.0
 pytest>=7.0.0
-pytest-asyncio>=0.21.0
 flake8>=6.0.0

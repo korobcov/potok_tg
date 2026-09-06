@@ -1,8 +1,6 @@
-import asyncio
 import logging
-from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
-from aiogram.client.default import DefaultBotProperties
+
+import telebot
 
 from app.config.settings import settings
 from app.handlers import admin
@@ -14,22 +12,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def main():
+def main():
     logger.info("Starting Telegram Bot...")
 
-    bot = Bot(
-        token=settings.BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-    )
-    dp = Dispatcher()
+    if settings.PROXY_URL:
+        telebot.apihelper.proxy = {"https": settings.PROXY_URL}
 
-    dp.include_router(admin.router)
+    bot = telebot.TeleBot(settings.BOT_TOKEN, parse_mode="HTML")
+    admin.register_handlers(bot)
 
-    try:
-        await dp.start_polling(bot)
-    finally:
-        await bot.session.close()
+    bot.infinity_polling()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
