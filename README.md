@@ -1,14 +1,14 @@
 # Telegram Video Poster Bot
 
-Production-ready асинхронный Telegram-бот на Python 3.11+, предназначенный для администраторов каналов. Бот принимает ссылки на видео (YouTube, VK, TikTok, Instagram, RuTube), извлекает метаданные (заголовок, превью) с помощью `yt-dlp` и позволяет опубликовать красивый пост в заданный Telegram-канал.
+Production-ready Telegram-бот на Python 3.11+, предназначенный для администраторов каналов. Бот принимает ссылки на видео (YouTube, VK, TikTok, Instagram, RuTube), извлекает метаданные (заголовок, превью) с помощью `yt-dlp` и позволяет опубликовать красивый пост в заданный Telegram-канал.
 
 ## 🚀 Технологический стек
 - **Python 3.11+**
-- **aiogram 3.x**
+- **pyTelegramBotAPI (telebot)**
 - **yt-dlp**
-- **aiohttp**
+- **requests**
 - **pydantic-settings**
-- **pytest & pytest-asyncio**
+- **pytest**
 - **Docker & Docker Compose**
 - **flake8**
 
@@ -181,7 +181,7 @@ docker compose exec bot pytest
 
 ## 🛠 Возможные проблемы
 
-- **Бот совсем не отвечает, в логах `aiogram.exceptions.TelegramNetworkError: HTTP Client says - Request timeout error` при старте (`get_me`), повторяется каждый перезапуск** — контейнер не может установить соединение с `api.telegram.org` (не DNS, а сам TCP-коннект зависает). Обычно это блокировка Bot API на уровне провайдера — сам Telegram-клиент при этом продолжает работать через другие протоколы. Проверьте:
+- **Бот совсем не отвечает, в логах таймаут/ошибка соединения при обращении к `api.telegram.org`, повторяется каждый перезапуск** — контейнер не может установить соединение с Telegram (не DNS, а сам TCP-коннект зависает или рвётся). Обычно это блокировка Bot API на уровне провайдера — сам Telegram-клиент при этом продолжает работать через другие протоколы. Проверьте:
   1. Доступен ли `api.telegram.org` вообще с хост-машины (не из контейнера):
      ```bash
      curl -v --max-time 10 https://api.telegram.org

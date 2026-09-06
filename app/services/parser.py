@@ -1,12 +1,11 @@
-import asyncio
 import logging
-from typing import Dict, Any, Optional
-import aiohttp
+from typing import Any, Dict, Optional
+import requests
 import yt_dlp
 
 logger = logging.getLogger(__name__)
 
-THUMBNAIL_DOWNLOAD_TIMEOUT = aiohttp.ClientTimeout(total=15)
+THUMBNAIL_DOWNLOAD_TIMEOUT = 15
 THUMBNAIL_DOWNLOAD_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -28,7 +27,7 @@ def _extract_info_sync(url: str) -> Dict[str, Any]:
         return info
 
 
-async def parse_video_url(url: str) -> Optional[Dict[str, str]]:
+def parse_video_url(url: str) -> Optional[Dict[str, str]]:
     """
     Parses a video URL using yt-dlp and extracts title, thumbnail_url,
     and web_url.
@@ -36,7 +35,7 @@ async def parse_video_url(url: str) -> Optional[Dict[str, str]]:
     or None if parsing fails/thumbnail missing.
     """
     try:
-        info = await asyncio.to_thread(_extract_info_sync, url)
+        info = _extract_info_sync(url)
         if not info:
             logger.error(f"Failed to retrieve info for URL: {url}")
             return None
@@ -66,7 +65,7 @@ async def parse_video_url(url: str) -> Optional[Dict[str, str]]:
         return None
 
 
-async def download_thumbnail(url: str) -> Optional[bytes]:
+def download_thumbnail(url: str) -> Optional[bytes]:
     """
     Downloads thumbnail bytes ourselves instead of letting Telegram fetch
     the URL directly, since some sources (VK, Instagram) block hotlinking
@@ -74,19 +73,18 @@ async def download_thumbnail(url: str) -> Optional[bytes]:
     Returns the raw bytes, or None if the download fails.
     """
     try:
-        async with aiohttp.ClientSession(
-            timeout=THUMBNAIL_DOWNLOAD_TIMEOUT
-        ) as session:
-            async with session.get(
-                url, headers=THUMBNAIL_DOWNLOAD_HEADERS
-            ) as response:
-                if response.status != 200:
-                    logger.warning(
-                        f"Thumbnail download for {url} returned "
-                        f"status {response.status}"
-                    )
-                    return None
-                return await response.read()
+        response = requests.get(
+            url,
+            headers=THUMBNAIL_DOWNLOAD_HEADERS,
+            timeout=THUMBNAIL_DOWNLOAD_TIMEOUT,
+        )
+        if response.status_code != 200:
+            logger.warning(
+                f"Thumbnail download for {url} returned "
+                f"status {response.status_code}"
+            )
+            return None
+        return response.content
     except Exception as e:
         logger.error(f"Error downloading thumbnail {url}: {e}")
         return None
