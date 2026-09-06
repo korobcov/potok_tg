@@ -41,6 +41,11 @@ def get_post_keyboard() -> types.InlineKeyboardMarkup:
         ),
         types.InlineKeyboardButton("❌ Отмена", callback_data="cancel_post"),
     )
+    keyboard.row(
+        types.InlineKeyboardButton(
+            "✏️ Изменить описание", callback_data="edit_caption"
+        ),
+    )
     return keyboard
 
 
@@ -48,6 +53,39 @@ def build_photo_source(
     thumbnail_bytes: Optional[bytes], thumbnail_url: str
 ) -> Union[bytes, str]:
     return thumbnail_bytes if thumbnail_bytes else thumbnail_url
+
+
+def _apply_caption_edit(
+    bot: telebot.TeleBot, message: types.Message, data: Dict
+) -> None:
+    new_title = message.text.strip()
+    if not new_title:
+        bot.reply_to(
+            message, "Текст не может быть пустым. Отправьте описание ещё раз."
+        )
+        return
+
+    caption = format_post_caption(new_title, data["url"])
+
+    with _state_lock:
+        data["title"] = new_title
+        data["caption"] = caption
+        data["awaiting_caption"] = False
+
+    try:
+        bot.edit_message_caption(
+            caption=f"📋 <b>Предпросмотр поста:</b>\n\n{caption}",
+            chat_id=data["preview_chat_id"],
+            message_id=data["preview_message_id"],
+            parse_mode="HTML",
+            reply_markup=get_post_keyboard(),
+        )
+        bot.reply_to(message, "✅ Описание обновлено, превью выше обновлено.")
+    except Exception as e:
+        logger.error(f"Error updating preview caption: {e}")
+        bot.reply_to(
+            message, f"❌ Не удалось обновить превью.\nОшибка: {e}"
+        )
 
 
 def register_handlers(bot: telebot.TeleBot) -> None:
@@ -71,6 +109,18 @@ def register_handlers(bot: telebot.TeleBot) -> None:
         if not message.from_user or not is_admin(message.from_user.id):
             return
 
+        user_id = message.from_user.id
+
+        with _state_lock:
+            pending = _pending_posts.get(user_id)
+            awaiting_caption = bool(
+                pending and pending.get("awaiting_caption")
+            )
+
+        if awaiting_caption:
+            _apply_caption_edit(bot, message, pending)
+            return
+
         text = message.text.strip()
         if not (text.startswith("http://") or text.startswith("https://")):
             bot.reply_to(
@@ -79,8 +129,6 @@ def register_handlers(bot: telebot.TeleBot) -> None:
                 "(начинающуюся с http:// или https://).",
             )
             return
-
-        user_id = message.from_user.id
 
         # Invalidate any previous pending preview so stale buttons can't
         # publish data that no longer matches what's on screen.
@@ -138,6 +186,8 @@ def register_handlers(bot: telebot.TeleBot) -> None:
 
         with _state_lock:
             _pending_posts[user_id] = {
+                "title": video_data["title"],
+                "url": video_data["url"],
                 "thumbnail_url": video_data["thumbnail_url"],
                 "thumbnail_bytes": thumbnail_bytes,
                 "caption": caption,
@@ -193,6 +243,35 @@ def register_handlers(bot: telebot.TeleBot) -> None:
                 f"❌ Ошибка при публикации в канал: {e}",
             )
             bot.answer_callback_query(call.id)
+
+    @bot.callback_query_handler(func=lambda c: c.data == "edit_caption")
+    def edit_caption_callback(call: types.CallbackQuery):
+        if not call.from_user or not is_admin(call.from_user.id):
+            bot.answer_callback_query(
+                call.id, "⛔ Доступ запрещён.", show_alert=True
+            )
+            return
+
+        with _state_lock:
+            data = _pending_posts.get(call.from_user.id)
+            if data:
+                data["awaiting_caption"] = True
+
+        if not data:
+            bot.answer_callback_query(
+                call.id,
+                "Ошибка: Данные поста устарели или не найдены.",
+                show_alert=True,
+            )
+            return
+
+        bot.answer_callback_query(call.id)
+        bot.send_message(
+            call.message.chat.id,
+            "✏️ Отправьте новый текст для поста (замените заголовок/"
+            "описание). Следующее сообщение будет использовано как текст "
+            "поста.",
+        )
 
     @bot.callback_query_handler(func=lambda c: c.data == "cancel_post")
     def cancel_post_callback(call: types.CallbackQuery):
