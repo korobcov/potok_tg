@@ -1,9 +1,19 @@
 import asyncio
 import logging
 from typing import Dict, Any, Optional
+import aiohttp
 import yt_dlp
 
 logger = logging.getLogger(__name__)
+
+THUMBNAIL_DOWNLOAD_TIMEOUT = aiohttp.ClientTimeout(total=15)
+THUMBNAIL_DOWNLOAD_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
+}
 
 
 def _extract_info_sync(url: str) -> Dict[str, Any]:
@@ -53,4 +63,30 @@ async def parse_video_url(url: str) -> Optional[Dict[str, str]]:
         }
     except Exception as e:
         logger.error(f"Error parsing URL {url}: {e}")
+        return None
+
+
+async def download_thumbnail(url: str) -> Optional[bytes]:
+    """
+    Downloads thumbnail bytes ourselves instead of letting Telegram fetch
+    the URL directly, since some sources (VK, Instagram) block hotlinking
+    without a browser-like User-Agent.
+    Returns the raw bytes, or None if the download fails.
+    """
+    try:
+        async with aiohttp.ClientSession(
+            timeout=THUMBNAIL_DOWNLOAD_TIMEOUT
+        ) as session:
+            async with session.get(
+                url, headers=THUMBNAIL_DOWNLOAD_HEADERS
+            ) as response:
+                if response.status != 200:
+                    logger.warning(
+                        f"Thumbnail download for {url} returned "
+                        f"status {response.status}"
+                    )
+                    return None
+                return await response.read()
+    except Exception as e:
+        logger.error(f"Error downloading thumbnail {url}: {e}")
         return None
