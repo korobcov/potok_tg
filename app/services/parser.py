@@ -3,6 +3,8 @@ from typing import Any, Dict, Optional
 import requests
 import yt_dlp
 
+from app.runtime_paths import find_ffmpeg
+
 logger = logging.getLogger(__name__)
 
 THUMBNAIL_DOWNLOAD_TIMEOUT = 15
@@ -14,6 +16,11 @@ THUMBNAIL_DOWNLOAD_HEADERS = {
     )
 }
 
+# On the Windows native build, ffmpeg.exe ships bundled next to the app
+# instead of being installed system-wide (unlike Docker/Linux, where it's
+# expected on PATH already).
+_BUNDLED_FFMPEG = find_ffmpeg()
+
 
 def _extract_info_sync(url: str) -> Dict[str, Any]:
     ydl_opts = {
@@ -22,6 +29,8 @@ def _extract_info_sync(url: str) -> Dict[str, Any]:
         "skip_download": True,
         "extract_flat": False,
     }
+    if _BUNDLED_FFMPEG:
+        ydl_opts["ffmpeg_location"] = _BUNDLED_FFMPEG
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         return info
