@@ -23,6 +23,11 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    # Default GITHUB_TOKEN is read-only unless granted write here - without
+    # this, the "Attach to GitHub Release" step fails with "Resource not
+    # accessible by integration" when uploading the build to a release.
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
