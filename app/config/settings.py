@@ -2,6 +2,8 @@ from typing import List, Optional, Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.runtime_paths import ENV_FILE
+
 
 class Settings(BaseSettings):
     BOT_TOKEN: str
@@ -13,7 +15,11 @@ class Settings(BaseSettings):
     PROXY_URL: Optional[str] = None
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # Absolute path: a frozen Windows exe can be launched with a working
+        # directory other than its own (e.g. double-click from Explorer sets
+        # it, but a shortcut or "Run as administrator" may not), so resolve
+        # .env relative to the exe/project location rather than os.getcwd().
+        env_file=str(ENV_FILE),
         env_file_encoding="utf-8",
         extra="ignore"
     )
