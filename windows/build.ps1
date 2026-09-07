@@ -62,8 +62,9 @@ if (Test-Path $ffmpegExeTarget) {
     Remove-Item -Recurse -Force $extractDir
 }
 
-Write-Host "==> Копирование .env.example и README..." -ForegroundColor Cyan
+Write-Host "==> Копирование .env.example, post_footer.example.txt и README..." -ForegroundColor Cyan
 Copy-Item -Force (Join-Path $RepoRoot ".env.example") (Join-Path $DistDir ".env.example")
+Copy-Item -Force (Join-Path $RepoRoot "post_footer.example.txt") (Join-Path $DistDir "post_footer.example.txt")
 Copy-Item -Force (Join-Path $RepoRoot "windows\README-WINDOWS.txt") (Join-Path $DistDir "README.txt")
 
 Write-Host ""
