@@ -152,6 +152,10 @@ activemq-data/
 # Environments
 .env
 .envrc
+
+# Per-deployment post signature/footer (see post_footer.example.txt) - like
+# .env, this holds an admin's own channel links, not project source.
+/post_footer.txt
 .venv
 .venv-build
 env/

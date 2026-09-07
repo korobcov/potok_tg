@@ -8,6 +8,7 @@ from telebot import types
 
 from app.config.settings import settings
 from app.services.parser import download_thumbnail, parse_video_url
+from app.services.post_footer import get_post_footer
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,16 @@ def is_admin(user_id: int) -> bool:
 
 def format_post_caption(title: str, url: str) -> str:
     safe_title = html.escape(title)
-    return f"<b>{safe_title}</b>\n\n🔗 <a href=\"{url}\">Смотреть видео</a>"
+    caption = f"<b>{safe_title}</b>\n\n🔗 <a href=\"{url}\">Смотреть видео</a>"
+
+    footer = get_post_footer()
+    if footer:
+        # Not escaped on purpose: this is admin-authored config content
+        # (see post_footer.example.txt), not external input, and it's
+        # meant to use Telegram's own HTML formatting (bold, spoiler,
+        # blockquote, links, ...).
+        caption += f"\n\n{footer}"
+    return caption
 
 
 def get_post_keyboard() -> types.InlineKeyboardMarkup:
