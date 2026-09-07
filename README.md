@@ -34,7 +34,7 @@ Production-ready Telegram-бот на Python 3.11+, предназначенны
 - Готовые сборки публикуются автоматически: откройте вкладку **Actions** в
   репозитории на GitHub → workflow **Build Windows native app** → последний
   успешный запуск → в разделе **Artifacts** скачайте `PotokBot-windows.zip`.
-- Либо, если есть релиз (тег `vX.Y.Z`), скачайте `PotokBot-windows.zip` со
+- Либо, если есть релиз (любой тег, например `v1.0.0` или `1.0.0`), скачайте `PotokBot-windows.zip` со
   страницы **Releases**.
 
 ### 2. Распакуйте архив
