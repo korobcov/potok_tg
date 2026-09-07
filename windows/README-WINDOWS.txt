@@ -1,4 +1,4 @@
-Telegram Video Poster Bot - Windows
+﻿Telegram Video Poster Bot - Windows
 
 Быстрый старт
 -------------

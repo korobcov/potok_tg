@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Собирает нативный Windows-билд бота: один .exe + ffmpeg.exe + .env.example

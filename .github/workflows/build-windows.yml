@@ -34,7 +34,7 @@ jobs:
 
       - name: Build native Windows app (PotokBot.exe + ffmpeg + .env.example)
         shell: pwsh
-        run: powershell -ExecutionPolicy Bypass -File windows\build.ps1
+        run: ./windows/build.ps1
 
       - name: Zip the build
         shell: pwsh
